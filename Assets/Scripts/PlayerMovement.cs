@@ -14,6 +14,7 @@ public class PlayerMovement : MonoBehaviour
 
     private Rigidbody2D rb;
     private SpriteRenderer spriteRenderer;
+    private Animator animator;
     private float horizontalInput;
     private bool isGrounded;
 
@@ -21,10 +22,22 @@ public class PlayerMovement : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
         spriteRenderer = GetComponent<SpriteRenderer>();
+        animator = GetComponent<Animator>();
+    }
+
+    private void Start()
+    {
+        GameManager.Instance?.SetSpawnPoint(transform.position);
     }
 
     private void Update()
     {
+        if (GameManager.Instance != null && GameManager.Instance.LevelEnded)
+        {
+            horizontalInput = 0f;
+            return;
+        }
+
         horizontalInput = Input.GetAxisRaw("Horizontal");
 
         if (horizontalInput > 0f)
@@ -42,7 +55,21 @@ public class PlayerMovement : MonoBehaviour
         if (Input.GetButtonDown("Jump") && isGrounded)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
+            AudioManager.Instance?.PlayJump();
         }
+
+        if (animator != null)
+        {
+            animator.SetFloat("Speed", Mathf.Abs(horizontalInput));
+            animator.SetBool("Grounded", isGrounded);
+            animator.SetFloat("VerticalVelocity", rb.linearVelocity.y);
+        }
+    }
+
+    public void Respawn(Vector3 position)
+    {
+        transform.position = position;
+        rb.linearVelocity = Vector2.zero;
     }
 
     private void FixedUpdate()
